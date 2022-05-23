@@ -13,28 +13,35 @@
         </li>
       </ul>
 
-      <!-- <form @submit.prevent="salvar">
-        <label>Descrição</label>
-        <input type="text" placeholder="Descrição" v-model="tarefa.descricao" />
-        <label>Data</label>
-        <input type="date" placeholder="Data" v-model="tarefa.data" />
-        <label>Usuário</label>
-        <input type="text" placeholder="Usuario" v-model="tarefa.usuario" />
+      <form>
+        <input
+          type="text"
+          placeholder="Descrição ou Usuário"
+          v-on:keyup.enter="listarTarefasPorDescricao(descricao)"
+          
+        />
+        <!-- <div class="input-field">
+          <select v-model="tarefa.completada">
+            <option disabled value="">Selecione</option>
+            <option value="Finalizado">Finalizado</option>
+            <option value="Pendente">Pendente</option>
+          <select/>
+          <label>Status</label>
+        </div> -->
 
-        <span>Completa</span>
-        <div class="switch" style="margin-bottom:22px;">
-          <label>
-            Não
-            <input type="checkbox" />
-            <span class="lever"></span>
-            Sim
-          </label>
-        </div>
-
-        <button class="waves-effect waves-light btn-small">
-          Salvar<i class="material-icons left">save</i>
+        <!-- <button
+          @click="listarTarefasPorDescricao(descricao)"
+          class="waves-effect btn-small blue darken-1"
+        >
+          <i class="material-icons">search</i>
+        </button> -->
+        <button
+          @click="clearFilter()"
+          class="waves-effect btn-small red darken-1"
+        >
+          <i class="material-icons">delete_sweep</i>
         </button>
-      </form> -->
+      </form>
 
       <table>
         <thead>
@@ -51,7 +58,7 @@
             <td>{{ tarefa.descricao }}</td>
             <td>{{ tarefa.data }}</td>
             <td>{{ tarefa.usuario.nome }}</td>
-            <td>{{tarefa.completada}}</td>
+            <td>{{ tarefa.completada }}</td>
             <td>
               <button
                 @click="editar(tarefa)"
@@ -86,14 +93,15 @@ export default {
         descricao: "",
         data: "",
         usuario: "",
-        completada:""
-        
+        completada: [
+          { value: null, text: "Selecione um status" },
+          { value: true, text: "Finalizado" },
+          { value: false, text: "Pendente" },
+        ],
       },
+      search:"",
       tarefas: [],
       errors: [],
-      search: "",
-      selected: null,
-
       // usuario:{
       //   id: "",
       //   nome: "",
@@ -102,9 +110,9 @@ export default {
     };
   },
   mounted() {
-    this.listar();
+    this.listarTarefas();
     this.listarUsuarios();
-    this.formataData();
+    
   },
   methods: {
     listarUsuarios() {
@@ -119,11 +127,23 @@ export default {
         });
     },
 
-    listar() {
+    listarTarefas() {
       Tarefa.listar()
         .then((resposta) => {
           this.tarefas = resposta.data;
-          console.log(resposta.data[0].data);
+          console.log(resposta.data);
+        })
+        .catch((e) => {
+          console.log(e);
+          console.log("deu errado");
+        });
+    },
+
+     listarTarefasPorDescricao(descricao) {
+      Tarefa.listarTarefasPorDescricao(descricao)
+        .then((resposta) => {
+          this.tarefas = resposta.data;
+          console.log("descricao");
         })
         .catch((e) => {
           console.log(e);
@@ -176,10 +196,28 @@ export default {
       }
     },
 
-    formataData() {
-      let data2 = document.querySelectorAll("td");
-      console.log(data2);
+    clearFilter() {
+      this.search = "";
+      this.selected = null;
     },
+
+      filteredItems() {
+      let items = [];
+      items = this.items.filter((item) => {
+        return (
+          item.descricao.toLowerCase().indexOf(this.search.toLowerCase()) > -1 ||
+          item.usuario.toLowerCase().indexOf(this.search.toLowerCase()) > -1
+        );
+      });
+
+      // items = items.filter((item) => {
+      //   if (this.selected == null) return item;
+      //   return item.isActive === this.selected;
+      // });
+
+      console.log('feegeg');
+      return items;
+    }
   },
 };
 </script>
