@@ -14,8 +14,14 @@ export default	{
 		return http.get('/tarefas');
 		
   },
+
+	listarTarefasPorDescricao:(descricao)=>{
+		return http.get('/tarefas/'+descricao);
+	},
     
 	apagar:(id)=>{
 		return http.delete('/tarefas/'+id);
 	}
+
+
 }
