@@ -13,33 +13,55 @@
         </li>
       </ul>
 
-      <form>
-        <input
-          type="text"
-          placeholder="Descrição ou Usuário"
-          v-on:keyup.enter="listarTarefasPorDescricao(descricao)"
-          
-        />
-        <!-- <div class="input-field">
-          <select v-model="tarefa.completada">
-            <option disabled value="">Selecione</option>
-            <option value="Finalizado">Finalizado</option>
-            <option value="Pendente">Pendente</option>
-          <select/>
-          <label>Status</label>
-        </div> -->
+      <form @submit.prevent="salvar">
+        <label>Descrição</label>
+        <input type="text" placeholder="Descrição" v-model="tarefa.descricao" />
+        <label>Data</label>
+        <input type="date" placeholder="Data" v-model="tarefa.data" />
+        <label>Usuário da api</label>
 
-        <!-- <button
-          @click="listarTarefasPorDescricao(descricao)"
-          class="waves-effect btn-small blue darken-1"
-        >
-          <i class="material-icons">search</i>
-        </button> -->
-        <button
-          @click="clearFilter()"
-          class="waves-effect btn-small red darken-1"
-        >
-          <i class="material-icons">delete_sweep</i>
+        <div class="input-field">
+          <select style="display:block" v-model="selectedUser"> 
+            <option 
+              v-for="user in options" :value="user"
+              :key="user.id" 
+            >
+              {{ user }}
+            </option>
+            <!-- <option value="" disabled selected>Selecione</option>
+            <option value="">{{ usuario.nome }}</option> -->
+          </select>
+          <hr />
+          Selected: {{ selectedUser }}
+        </div>
+
+        <div class="input-group">
+          <label>Status</label>
+        </div>
+        <p>
+          <label>
+            <input
+              name="group1"
+              type="radio"
+              checked
+              value="false"
+              v-model="picked"
+            />
+            <span>Pendente</span>
+          </label>
+        </p>
+        <p>
+          <label>
+            <input name="group1" type="radio" value="true" v-model="picked" />
+            <span>Finalizado</span>
+          </label>
+        </p>
+        <p>
+          <span>Picked: {{ picked }}</span>
+        </p>
+
+        <button class="waves-effect waves-light btn-small purple">
+          Salvar<i class="material-icons left">save</i>
         </button>
       </form>
 
@@ -93,33 +115,43 @@ export default {
         descricao: "",
         data: "",
         usuario: "",
-        completada: [
-          { value: null, text: "Selecione um status" },
-          { value: true, text: "Finalizado" },
-          { value: false, text: "Pendente" },
-        ],
+        completada: [],
       },
-      search:"",
+      usuario: {
+        id: "",
+        nome: "",
+      },
+      info: null,
+      selectedUser: "",
+      search: "",
+      picked: "",
       tarefas: [],
+      usuarios:[],
       errors: [],
-      // usuario:{
-      //   id: "",
-      //   nome: "",
-      // },
-      // usuarios: [],
     };
   },
+  computed: {
+    options() {
+    return Object.keys(this.usuarios).map((k)=>{
+      let us = this.usuarios[k];
+      return `${us.listarUsuarios()}`;
+    });
+
+    },
+
+  },
+
   mounted() {
     this.listarTarefas();
     this.listarUsuarios();
-    
+    //this.listarUsuariosPorNome();
   },
   methods: {
-    listarUsuarios() {
-      Usuario.listar()
+    listarUsuarios(nome) {
+      Usuario.listarUsersPorNome(nome)
         .then((resposta) => {
           this.usuarios = resposta.data.usuarios;
-          console.log("oioioi user");
+          console.log(resposta.data +"usuarios");
         })
         .catch((e) => {
           console.log(e);
@@ -131,7 +163,7 @@ export default {
       Tarefa.listar()
         .then((resposta) => {
           this.tarefas = resposta.data;
-          console.log(resposta.data);
+          console.log(resposta.data + "tarefas");
         })
         .catch((e) => {
           console.log(e);
@@ -139,7 +171,7 @@ export default {
         });
     },
 
-     listarTarefasPorDescricao(descricao) {
+    listarTarefasPorDescricao(descricao) {
       Tarefa.listarTarefasPorDescricao(descricao)
         .then((resposta) => {
           this.tarefas = resposta.data;
@@ -151,74 +183,68 @@ export default {
         });
     },
 
-    salvar() {
-      if (!this.tarefa.id) {
-        Tarefa.salvar(this.tarefa)
-          .then((resposta) => {
-            this.resposta = resposta;
-            this.tarefa = {};
-            alert("Cadastrado com sucesso!");
-            this.listar();
-            this.errors = {};
-          })
-          .catch((e) => {
-            this.errors = e.response.data.errors;
-          });
-      } else {
-        Tarefa.atualizar(this.tarefa)
-          .then((resposta) => {
-            this.resposta = resposta;
-            this.tarefa = {};
-            this.errors = {};
-            alert("Atualizado com sucesso!");
-            this.listar();
-          })
-          .catch((e) => {
-            this.errors = e.response.data.errors;
-          });
-      }
-    },
-    editar(tarefa) {
-      this.tarefa = tarefa;
-    },
-    remover(id) {
-      console.log("removido");
-      if (confirm("Deseja excluir a tarefa?")) {
-        Tarefa.apagar(id)
-          .then((resposta) => {
-            this.resposta = resposta.data;
-            this.listar();
-            this.errors = {};
-          })
-          .catch((e) => {
-            this.errors = e.response.data.errors;
-          });
-      }
-    },
-
-    clearFilter() {
-      this.search = "";
-      this.selected = null;
-    },
-
-      filteredItems() {
-      let items = [];
-      items = this.items.filter((item) => {
-        return (
-          item.descricao.toLowerCase().indexOf(this.search.toLowerCase()) > -1 ||
-          item.usuario.toLowerCase().indexOf(this.search.toLowerCase()) > -1
-        );
-      });
-
-      // items = items.filter((item) => {
-      //   if (this.selected == null) return item;
-      //   return item.isActive === this.selected;
-      // });
-
-      console.log('feegeg');
-      return items;
+  salvar() {
+    if (!this.tarefa.id) {
+      Tarefa.salvar(this.tarefa)
+        .then((resposta) => {
+          this.resposta = resposta;
+          this.tarefa = {};
+          alert("Cadastrado com sucesso!");
+          this.listar();
+          this.errors = {};
+        })
+        .catch((e) => {
+          this.errors = e.response.data.errors;
+        });
+    } else {
+      Tarefa.atualizar(this.tarefa)
+        .then((resposta) => {
+          this.resposta = resposta;
+          this.tarefa = {};
+          this.errors = {};
+          alert("Atualizado com sucesso!");
+          this.listar();
+        })
+        .catch((e) => {
+          this.errors = e.response.data.errors;
+        });
     }
   },
+  editar(tarefa) {
+    this.tarefa = tarefa;
+  },
+
+  remover(id) {
+    console.log("removido");
+    if (confirm("Deseja excluir a tarefa?")) {
+      Tarefa.apagar(id)
+        .then((resposta) => {
+          this.resposta = resposta.data;
+          this.listar();
+          this.errors = {};
+        })
+        .catch((e) => {
+          this.errors = e.response.data.errors;
+        });
+    }
+  },
+
+  clearFilter() {
+    this.search = "";
+    this.selected = null;
+  },
+
+  filteredItems() {
+    let items = [];
+    items = this.items.filter((item) => {
+      return (
+        item.descricao.toLowerCase().indexOf(this.search.toLowerCase()) > -1 ||
+        item.usuario.toLowerCase().indexOf(this.search.toLowerCase()) > -1
+      );
+    });
+    return items;
+  },
+},
 };
 </script>
 
