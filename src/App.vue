@@ -21,18 +21,14 @@
         <label>Usuário da api</label>
 
         <div class="input-field">
-          <select style="display:block" v-model="selectedUser"> 
-            <option 
-              v-for="user in options" :value="user"
-              :key="user.id" 
-            >
-              {{ user }}
+          <select style="display:block" v-model="usuario.nome">
+            <option value="" hidden>Selecione</option>
+            <option v-for="(user, index) of usuarios" :key="index">
+              {{ user.nome }}
             </option>
-            <!-- <option value="" disabled selected>Selecione</option>
-            <option value="">{{ usuario.nome }}</option> -->
           </select>
           <hr />
-          Selected: {{ selectedUser }}
+          Selected: {{ usuario.nome }}
         </div>
 
         <div class="input-group">
@@ -126,36 +122,25 @@ export default {
       search: "",
       picked: "",
       tarefas: [],
-      usuarios:[],
+      usuarios: [],
       errors: [],
     };
-  },
-  computed: {
-    options() {
-    return Object.keys(this.usuarios).map((k)=>{
-      let us = this.usuarios[k];
-      return `${us.listarUsuarios()}`;
-    });
-
-    },
-
   },
 
   mounted() {
     this.listarTarefas();
     this.listarUsuarios();
-    //this.listarUsuariosPorNome();
   },
   methods: {
-    listarUsuarios(nome) {
-      Usuario.listarUsersPorNome(nome)
+    listarUsuarios() {
+      //fazer a requisicao que lista usuarios da api - copia acima
+      Usuario.listar()
         .then((resposta) => {
-          this.usuarios = resposta.data.usuarios;
-          console.log(resposta.data +"usuarios");
+          this.usuarios = resposta.data;
         })
         .catch((e) => {
           console.log(e);
-          console.log("deu errado");
+          console.log("deu errado user");
         });
     },
 
@@ -183,68 +168,69 @@ export default {
         });
     },
 
-  salvar() {
-    if (!this.tarefa.id) {
-      Tarefa.salvar(this.tarefa)
-        .then((resposta) => {
-          this.resposta = resposta;
-          this.tarefa = {};
-          alert("Cadastrado com sucesso!");
-          this.listar();
-          this.errors = {};
-        })
-        .catch((e) => {
-          this.errors = e.response.data.errors;
-        });
-    } else {
-      Tarefa.atualizar(this.tarefa)
-        .then((resposta) => {
-          this.resposta = resposta;
-          this.tarefa = {};
-          this.errors = {};
-          alert("Atualizado com sucesso!");
-          this.listar();
-        })
-        .catch((e) => {
-          this.errors = e.response.data.errors;
-        });
-    }
-  },
-  editar(tarefa) {
-    this.tarefa = tarefa;
-  },
+    salvar() {
+      if (!this.tarefa.id) {
+        Tarefa.salvar(this.tarefa)
+          .then((resposta) => {
+            this.resposta = resposta;
+            this.tarefa = {};
+            alert("Cadastrado com sucesso!");
+            this.listar();
+            this.errors = {};
+          })
+          .catch((e) => {
+            this.errors = e.response.data.errors;
+          });
+      } else {
+        Tarefa.atualizar(this.tarefa)
+          .then((resposta) => {
+            this.resposta = resposta;
+            this.tarefa = {};
+            this.errors = {};
+            alert("Atualizado com sucesso!");
+            this.listar();
+          })
+          .catch((e) => {
+            this.errors = e.response.data.errors;
+          });
+      }
+    },
+    editar(tarefa) {
+      this.tarefa = tarefa;
+    },
 
-  remover(id) {
-    console.log("removido");
-    if (confirm("Deseja excluir a tarefa?")) {
-      Tarefa.apagar(id)
-        .then((resposta) => {
-          this.resposta = resposta.data;
-          this.listar();
-          this.errors = {};
-        })
-        .catch((e) => {
-          this.errors = e.response.data.errors;
-        });
-    }
-  },
+    remover(id) {
+      console.log("removido");
+      if (confirm("Deseja excluir a tarefa?")) {
+        Tarefa.apagar(id)
+          .then((resposta) => {
+            this.resposta = resposta.data;
+            this.listar();
+            this.errors = {};
+          })
+          .catch((e) => {
+            this.errors = e.response.data.errors;
+          });
+      }
+    },
 
-  clearFilter() {
-    this.search = "";
-    this.selected = null;
-  },
+    clearFilter() {
+      this.search = "";
+      this.selected = null;
+    },
 
-  filteredItems() {
-    let items = [];
-    items = this.items.filter((item) => {
-      return (
-        item.descricao.toLowerCase().indexOf(this.search.toLowerCase()) > -1 ||
-        item.usuario.toLowerCase().indexOf(this.search.toLowerCase()) > -1
-      );
-    });
-    return items;
+    filteredItems() {
+      let items = [];
+      items = this.items.filter((item) => {
+        return (
+          item.descricao.toLowerCase().indexOf(this.search.toLowerCase()) >
+            -1 ||
+          item.usuario.toLowerCase().indexOf(this.search.toLowerCase()) > -1
+        );
+      });
+      return items;
+    },
   },
-},
 };
 </script>
 
